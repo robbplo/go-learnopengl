@@ -1,4 +1,4 @@
-module github.com/robbplo/game
+module github.com/robbplo/go-learnopengl
 
 go 1.21.1
 

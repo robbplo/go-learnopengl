@@ -62,7 +62,7 @@ func main() {
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
 
 	// Load shaders
-	programId, err := loadShaders("shaders/SimpleVertexShader.glsl", "shaders/SimpleFragmentShader.glsl")
+	programId, err := loadShaders("shaders/shader_vert.glsl", "shaders/shader_frag.glsl")
 	if err != nil {
 		panic(err)
 	}
@@ -70,14 +70,14 @@ func main() {
 	gl.ClearColor(0.0, 0.0, 0.4, 0.0)
 
 	glfw.GetCurrentContext().SetInputMode(glfw.StickyKeysMode, glfw.True)
-	for !shouldClose(window) {
+	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.UseProgram(programId)
 
 		// 1st attribute buffer : vertices
 		gl.EnableVertexAttribArray(0)
 		gl.BindBuffer(gl.ARRAY_BUFFER, vertexbuffer)
-		gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, gl.PtrOffset(0))
+		gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 0, 0)
 		gl.DrawArrays(gl.TRIANGLES, 0, 3) // Starting from vertex 0; 3 vertices total -> 1 triangle
 		gl.DisableVertexAttribArray(0)
 
@@ -86,11 +86,11 @@ func main() {
 
 		// Poll for window events.
 		glfw.PollEvents()
-	}
-}
 
-func shouldClose(window *glfw.Window) bool {
-	return window.GetKey(glfw.KeyEscape) == glfw.Press || window.ShouldClose()
+		if window.GetKey(glfw.KeyEscape) == glfw.Press {
+			window.SetShouldClose(true)
+		}
+	}
 }
 
 func loadShaders(vertexFilePath string, fragmentFilePath string) (uint32, error) {
@@ -129,7 +129,6 @@ func loadShaders(vertexFilePath string, fragmentFilePath string) (uint32, error)
 func compileShader(path string, shaderType uint32) (uint32, error) {
 	fmt.Println("Compiling shader:", path)
 	shader := gl.CreateShader(shaderType)
-	// Read shader code from file
 	shaderCode, err := os.ReadFile(path)
 	if err != nil {
 		return 0, err
