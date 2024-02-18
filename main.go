@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 func init() {
@@ -31,7 +32,9 @@ func main() {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
-	window, err := glfw.CreateWindow(800, 600, "Your Game Title", nil, nil)
+	windowWidth := 800
+	windowHeight := 600
+	window, err := glfw.CreateWindow(windowWidth, windowHeight, "Your Game Title", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -67,6 +70,23 @@ func main() {
 		panic(err)
 	}
 
+	/// calculate the MVP matrix
+	// Projection matrix
+	projection := mgl32.Perspective(mgl32.DegToRad(80.0), float32(windowWidth)/float32(windowHeight), 0.1, 100.0)
+
+	// Camera matrix
+	view := mgl32.LookAtV(mgl32.Vec3{4, 3, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+
+	// Model matrix
+  scale := mgl32.Scale3D(1.0, 2.0, 1.0)
+  rotate := mgl32.HomogRotate3D(mgl32.DegToRad(45.0), mgl32.Vec3{0, 0, 1})
+  translate := mgl32.Translate3D(0.0, 0.0, 0.0)
+	model := translate.Mul4(rotate).Mul4(scale)
+
+
+	mvp := projection.Mul4(view).Mul4(model)
+	mvpId := gl.GetUniformLocation(programId, gl.Str("MVP\x00"))
+
 	gl.ClearColor(0.0, 0.0, 0.4, 0.0)
 
 	glfw.GetCurrentContext().SetInputMode(glfw.StickyKeysMode, glfw.True)
@@ -77,8 +97,12 @@ func main() {
 		// 1st attribute buffer : vertices
 		gl.EnableVertexAttribArray(0)
 		gl.BindBuffer(gl.ARRAY_BUFFER, vertexbuffer)
+
+		gl.UniformMatrix4fv(mvpId, 1, false, &mvp[0])
+
 		gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 0, 0)
 		gl.DrawArrays(gl.TRIANGLES, 0, 3) // Starting from vertex 0; 3 vertices total -> 1 triangle
+
 		gl.DisableVertexAttribArray(0)
 
 		// Update window
